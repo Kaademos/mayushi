@@ -84,7 +84,7 @@ def test_is_idempotent(repo_root: Path, workdir: Path) -> None:
     [
         ("KEYCLOAK_ADMIN_PASSWORD", "admin"),
         ("KEYCLOAK_ADMIN_USER", "admin"),
-        ("POSTGRES_PASSWORD", "postgres-local-dev"),
+        ("POSTGRES_PASSWORD", "too-short-123"),
         ("KEYCLOAK_BOOTSTRAP_ADMIN_USER", "Admin"),
     ],
 )
