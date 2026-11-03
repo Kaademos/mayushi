@@ -1,0 +1,174 @@
+name: mayushi
+
+x-python-service: &python-service
+  restart: unless-stopped
+  networks:
+    - backend
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run make bootstrap}
+      KEYCLOAK_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?run make bootstrap}
+      GATEWAY_DB_PASSWORD: ${GATEWAY_DB_PASSWORD:?run make bootstrap}
+      ORDERS_DB_PASSWORD: ${ORDERS_DB_PASSWORD:?run make bootstrap}
+      GATEWAY_MIGRATOR_DB_PASSWORD: ${GATEWAY_MIGRATOR_DB_PASSWORD:?run make bootstrap}
+      ORDERS_MIGRATOR_DB_PASSWORD: ${ORDERS_MIGRATOR_DB_PASSWORD:?run make bootstrap}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mayushi"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks:
+      - backend
+
+  redis:
+    image: redis:7.4.1-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - backend
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    restart: unless-stopped
+    command: ["start", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:?run make bootstrap}
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8080}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_BOOTSTRAP_ADMIN_USER:?run make bootstrap}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_BOOTSTRAP_ADMIN_PASSWORD:?run make bootstrap}
+    volumes:
+      - ./infra/keycloak/realm-northwind.json:/opt/keycloak/data/import/realm-northwind.json:ro
+      - ./infra/keycloak/configure.sh:/opt/mayushi/configure.sh:ro
+    ports:
+      - "127.0.0.1:${KEYCLOAK_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"status": "UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - backend
+
+  orders-migrate:
+    build: ./services/orders
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      ORDERS_DATABASE_URL: postgresql+psycopg://orders_migrator:${ORDERS_MIGRATOR_DB_PASSWORD:?run make bootstrap}@postgres:5432/mayushi
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  orders:
+    <<: *python-service
+    build: ./services/orders
+    depends_on:
+      orders-migrate:
+        condition: service_completed_successfully
+    environment:
+      ORDERS_DATABASE_URL: postgresql+psycopg://orders_svc:${ORDERS_DB_PASSWORD:?run make bootstrap}@postgres:5432/mayushi
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  gateway-migrate:
+    build: ./services/gateway
+    command: ["migrate"]
+    restart: "no"
+    environment:
+      ENV: ${ENV:-production}
+      GATEWAY_DATABASE_URL: postgresql+psycopg://gateway_migrator:${GATEWAY_MIGRATOR_DB_PASSWORD:?run make bootstrap}@postgres:5432/mayushi
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend
+
+  gateway:
+    <<: *python-service
+    build: ./services/gateway
+    environment:
+      ENV: ${ENV:-production}
+      GATEWAY_DATABASE_URL: postgresql+psycopg://gateway_svc:${GATEWAY_DB_PASSWORD:?run make bootstrap}@postgres:5432/mayushi
+      GATEWAY_OIDC_ISSUER: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8080}/realms/northwind
+      GATEWAY_OIDC_JWKS_URL: http://keycloak:8080/realms/northwind/protocol/openid-connect/certs
+      GATEWAY_OIDC_AUDIENCE: mayushi-api
+      GATEWAY_CORS_ORIGINS: '["http://localhost:3000"]'
+    ports:
+      - "127.0.0.1:${GATEWAY_PORT:-8000}:8000"
+    depends_on:
+      gateway-migrate:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:v1.21.8
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+      MP_MAX_MESSAGES: "5000"
+    ports:
+      - "127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025"
+      - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - backend
+
+volumes:
+  postgres-data:
+
+networks:
+  backend:
+    name: mayushi_backend

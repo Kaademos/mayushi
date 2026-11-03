@@ -1,0 +1,38 @@
+[project]
+name = "mayushi-security-tests"
+version = "0.1.0"
+description = "Cross-service security tests for Mayushi"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28",
+    "mypy>=1.13",
+    "psycopg[binary]>=3.2",
+    "pytest>=8.3",
+    "pyyaml>=6.0",
+    "types-pyyaml>=6.0",
+    "ruff>=0.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["."]
+addopts = "-ra -m 'not integration'"
+markers = ["integration: requires the running compose stack (make up && make seed)"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["."]
+exclude = ["\\.venv"]

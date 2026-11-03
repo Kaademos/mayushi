@@ -1,0 +1,30 @@
+.private/
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.pnpm-store/
+
+# Test / coverage output
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+playwright-report/
+test-results/
+
+# Editors / OS
+.DS_Store
+.idea/

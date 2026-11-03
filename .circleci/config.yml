@@ -1,0 +1,85 @@
+version: 2.1
+
+executors:
+  python:
+    docker:
+      - image: cimg/python:3.12.8
+    resource_class: small
+    environment:
+      UV_CACHE_DIR: /home/circleci/.cache/uv
+      UV_PYTHON_DOWNLOADS: never
+  machine:
+    machine:
+      image: ubuntu-2404:2024.11.1
+    resource_class: medium
+
+commands:
+  setup-uv:
+    steps:
+      - run:
+          name: Install uv
+          command: curl -LsSf https://astral.sh/uv/0.13.6/install.sh | sh
+      - restore_cache:
+          keys:
+            - uv-v1-{{ checksum "services/gateway/uv.lock" }}-{{ checksum "services/orders/uv.lock" }}-{{ checksum "tests/security/uv.lock" }}
+            - uv-v1-
+      - run:
+          name: Sync Python environments
+          command: |
+            for project in services/gateway services/orders tests/security; do
+              uv sync --frozen --directory "$project"
+            done
+      - save_cache:
+          key: uv-v1-{{ checksum "services/gateway/uv.lock" }}-{{ checksum "services/orders/uv.lock" }}-{{ checksum "tests/security/uv.lock" }}
+          paths:
+            - /home/circleci/.cache/uv
+
+jobs:
+  lint:
+    executor: python
+    steps:
+      - checkout
+      - setup-uv
+      - run:
+          name: Ruff
+          command: make lint-py
+
+  typecheck:
+    executor: python
+    steps:
+      - checkout
+      - setup-uv
+      - run:
+          name: mypy
+          command: make typecheck
+
+  test:
+    executor: python
+    steps:
+      - checkout
+      - setup-uv
+      - run:
+          name: Unit tests
+          command: make test
+
+  compose:
+    executor: machine
+    steps:
+      - checkout
+      - run:
+          name: Generate credentials
+          command: scripts/bootstrap.sh
+      - run:
+          name: Validate compose file
+          command: docker compose config --quiet
+      - run:
+          name: Build images
+          command: docker compose build
+
+workflows:
+  ci:
+    jobs:
+      - lint
+      - typecheck
+      - test
+      - compose

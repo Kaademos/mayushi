@@ -1,0 +1,249 @@
+{
+  "realm": "northwind",
+  "displayName": "Northwind Parcel Co.",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "rememberMe": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "customer",
+        "description": "Northwind customer"
+      },
+      {
+        "name": "support_agent",
+        "description": "Customer support agent"
+      },
+      {
+        "name": "support_admin",
+        "description": "Customer support administrator"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "mayushi-web",
+      "name": "Mayushi web app",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "rootUrl": "http://localhost:3000",
+      "baseUrl": "/",
+      "redirectUris": [
+        "http://localhost:3000/auth/callback"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3000/",
+        "use.refresh.tokens": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenant",
+            "claim.name": "tenant",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true",
+            "multivalued": "false"
+          }
+        },
+        {
+          "name": "mayushi-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "mayushi-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ],
+      "clientAuthenticatorType": "client-secret"
+    }
+  ],
+  "users": [
+    {
+      "id": "5434558e-35d4-5787-a5ef-5073257fe9fd",
+      "username": "kirsty.collins@example.com",
+      "email": "kirsty.collins@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Kirsty",
+      "lastName": "Collins",
+      "attributes": {
+        "tenant": [
+          "northwind-retail"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ]
+    },
+    {
+      "id": "1146803c-9191-5e6d-9b59-f3e749298c56",
+      "username": "gemma.yates@example.net",
+      "email": "gemma.yates@example.net",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Gemma",
+      "lastName": "Yates",
+      "attributes": {
+        "tenant": [
+          "northwind-retail"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ]
+    },
+    {
+      "id": "e5314e72-30b3-5eb2-b9f6-618240bcd30d",
+      "username": "sam.blake@example.org",
+      "email": "sam.blake@example.org",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Sam",
+      "lastName": "Blake",
+      "attributes": {
+        "tenant": [
+          "northwind-retail"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ]
+    },
+    {
+      "id": "7c24345a-3678-5343-ac6e-b9104e4f7857",
+      "username": "samuel.carter@example.com",
+      "email": "samuel.carter@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Samuel",
+      "lastName": "Carter",
+      "attributes": {
+        "tenant": [
+          "northwind-b2b"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ]
+    },
+    {
+      "id": "44e94a58-2c56-5481-8c17-c31c10c3a3e4",
+      "username": "francesca.howell@example.net",
+      "email": "francesca.howell@example.net",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Francesca",
+      "lastName": "Howell",
+      "attributes": {
+        "tenant": [
+          "northwind-b2b"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ]
+    },
+    {
+      "id": "3cea333a-2cb4-5f9a-956a-f7226f1f487e",
+      "username": "carol.turner@example.org",
+      "email": "carol.turner@example.org",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Carol",
+      "lastName": "Turner",
+      "attributes": {
+        "tenant": [
+          "northwind-b2b"
+        ]
+      },
+      "realmRoles": [
+        "customer"
+      ]
+    },
+    {
+      "id": "36e5ed16-8896-576d-afaa-26955cd4bb05",
+      "username": "amber.jones@northwindparcel.example",
+      "email": "amber.jones@northwindparcel.example",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Amber",
+      "lastName": "Jones",
+      "attributes": {
+        "tenant": [
+          "northwind-retail"
+        ]
+      },
+      "realmRoles": [
+        "support_agent"
+      ]
+    },
+    {
+      "id": "b7d4edc3-d592-5d2a-b091-492d09cfeec7",
+      "username": "alex.coles@northwindparcel.example",
+      "email": "alex.coles@northwindparcel.example",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Alex",
+      "lastName": "Coles",
+      "attributes": {
+        "tenant": [
+          "northwind-retail"
+        ]
+      },
+      "realmRoles": [
+        "support_admin"
+      ]
+    }
+  ],
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"tenant\",\"displayName\":\"Tenant\",\"validations\":{\"options\":{\"options\":[\"northwind-retail\",\"northwind-b2b\"]}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  },
+  "passwordPolicy": "length(15) and maxLength(128) and notUsername and notEmail",
+  "permanentLockout": false,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "revokeRefreshToken": true,
+  "refreshTokenMaxReuse": 0
+}
